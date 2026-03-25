@@ -1,0 +1,89 @@
+PlayerProfile = {
+
+  -- Версия данных
+  DataVersion = 5, -- v5: добавлены equipSlots, exclusiveItems, rank
+
+  -- Валюта игрока
+  coins = 0, -- сбрасывается при Rebirth
+
+  -- Время игры
+  playTime = 0, -- totalPlayTime в секундах
+
+  -- Rebirth
+  rebirthCount = 0,
+  rebirthPoints = 0, -- не сбрасывается
+
+  -- Разблокированные острова (индексы или ключи)
+  islandsUnlocked = {1}, -- 1 = Starter, 2 = Forest и т.д.
+
+  -- Опциональный ранг игрока (для будущих механик)
+  rank = 1,
+
+  -- Питомцы (GUID как ключ)
+  pets = {
+    ["GUID_123_ABC"] = {
+      n = "Dog",        -- nameId, ссылка на PetConfig
+      r = 1,            -- rarityId: 1=Common, 2=Rare, 3=Epic, 4=Legendary
+      level = 1,
+      xp = 0,
+      golden = false
+    }
+  },
+
+  -- Экипировка (только GUID)
+  equippedPets = {"GUID_123_ABC"}, -- max BaseSlots + GamePass + RebirthUpgrades.equipSlots
+
+  -- Pity System
+  pityCounters = {
+    starterEgg = 0,
+    forestEgg = 0
+    -- менеджер должен чистить ключи для удалённых яиц
+  },
+
+  -- Rare Area Access (timestamp)
+  rareAreaAccessUntil = 0, -- os.time()
+
+  -- Rebirth Shop Upgrades (все значения - целые числа)
+  rebirthUpgrades = {
+    petSlots = 0,         -- дополнительные слоты инвентаря
+    equipSlots = 0,       -- дополнительные слоты экипировки
+    afkIncome = 0,        -- процент увеличения AFK дохода (складывается)
+    chestSpawn = 0,       -- ускорение спавна сундуков (в процентах)
+    bonusIncome = 0,      -- дополнительный процент к доходу
+    clickRateLimit = 0    -- увеличение лимита кликов (в долях)
+  },
+
+  -- Игровые настройки
+  settings = {
+    autoDeleteCommon = false,
+    autoDeleteRare = false
+  },
+
+  -- Boosts / Усилители (ключ - название буста, значение - время окончания)
+  activeBoosts = {
+    ["X2Coins"] = 0, -- timestamp конца действия
+    ["XPBoost"] = 0
+  },
+
+  -- Постоянные Game Passes
+  ownedGamePasses = {}, -- массив ID, кеш для офлайн и кросс-серверной проверки
+
+  -- Эксклюзивные предметы (питомцы, скины и т.д.)
+  exclusiveItems = {}, -- массив ID эксклюзивных предметов
+
+  -- История покупок за Robux
+  purchaseHistory = {
+    -- список ReceiptId
+  },
+
+  -- Квесты
+  quests = {
+    { type = "daily", id = "break_100", progress = 45, completed = false, expiresAt = 1712345678 },
+    { type = "daily", id = "open_5_eggs", progress = 2, completed = false, expiresAt = 1712345678 },
+    { type = "event", id = "halloween", progress = 3, completed = false, expiresAt = 1713000000 },
+    { type = "mission", id = "unlock_portal", progress = 1, completed = false }
+  },
+
+  -- История последних вылуплений яиц
+  recentHatches = {"GUID_123_ABC", "GUID_456_DEF"} -- максимум 5 последних
+}

@@ -1,0 +1,155 @@
+Level Blueprint – Starter и Второй остров
+1. Общая карта
+
+Starter Island: 120 × 120 studs
+
+Минимальная вертикальность: 3 холма высотой 5–8 studs
+
+Визуальная вариативность: плоская карта с холмами, деревьями, кустами, скалами для Sightlines и навигации
+
+2. Зонирование острова
+Зона	Размер (studs)	Описание
+Центральный Hub	30 × 30	Стартовая зона, точки взаимодействия: Spawn, Quest Board, Egg Shop
+Farming Zones	4 × 20 × 20	Основные зоны фарма, сундуки Common / Rare
+Rare Area	20 × 20	Rare и Epic сундуки, визуальные маркеры (цвет, low fence, bush) **с триггером входа**
+Portal Area	15 × 15	Портал на следующий остров + preview
+AFK зона	12 × 12	Idle анимации, AFK Income max 8 часов, **только здесь начисляется AFK бонус**
+Spawn зона	10 × 10	Начальная точка игрока
+
+Пояснение: Общая площадь зон ≈ 120×120, оставляя свободное пространство для Sightlines и визуального комфорта.
+
+Rare Area имеет триггер входа, проверяющий доступ игрока **с кулдауном 1 сек**
+
+3. Chest Spawn / Density
+Тип сундука	Количество / зона	Respawn (сек)	Radius (studs)	Damage Cap
+Common	12	10–15	5	–
+Rare	6–8	10–15	5	–
+Epic	2–3	10–15	5	–
+Mega Chest	1 (центр)	5 мин / событие	5	Max 50% HP за тик
+
+Обработка: Object Pool + Server-side Atomic Claim **с учётом пинга**
+
+Feedback: Screen notification + arrow + SFX
+
+4. Rare / Epic Areas
+
+Верхняя часть острова
+
+Визуальные маркеры: цвет, low fence, bush
+
+Отдельные spawn-площадки для Rare / Epic сундуков
+
+При входе в зону проверка rareAreaAccessUntil **с кулдауном**
+
+5. Portal зона
+
+Расположена в нижней части острова
+
+Portal Unlock Threshold:
+
+1-й остров → 0.5–1 Rebirth Cost (например, 4–5k coins)
+
+2-й остров → скорректирован для баланса прогрессии
+
+Визуальный preview следующего острова
+
+6. AFK зона
+
+Размер: 12 × 12 studs, рядом с Hub
+
+AFK Income: max 8 часов, **только здесь**
+
+Idle animation trigger
+
+7. Chest / Egg / Pet Zones
+
+Bulk Open / Pity System: зоны отображают прогресс Pity для игрока
+
+Sightlines: видны сундуки, другие игроки, Mega Chest
+
+Цветовые различия terrain/tiles, low fences для визуального разделения
+
+8. Inventory / Fusion / Auto-delete
+
+Multi-select для удаления / слияния питомцев
+
+Auto-delete Common/Rare после Fusion или через кнопку «Clean Up» с учётом настроек в профиле **и приоритетом удаления**
+
+Equipped Limit = 3 базовых + 3 Game Pass + Rebirth Shop bonus (equipSlots)
+
+Inventory Capacity = 50 слотов + Rebirth Shop bonus (petSlots)
+
+Подсказка игроку при заполнении инвентаря
+
+9. Level Template для будущих островов
+
+Шаблон: Hub, 4 Farming Zones, Rare Area, Portal Area
+
+Размер: 140–180 studs
+
+Меняются тема, сундуки, Rare Zone
+
+Scaling сундуков и наград по кривой прогрессии (см. economy.txt)
+
+10. Scaling для второго острова
+
+Размер: 160 × 160 studs
+
+Chest count:
+
+Common: 12
+
+Rare: 10
+
+Epic: 5
+
+Legendary: 2
+
+Порог Portal Unlock скорректирован для баланса
+
+Добавлены бонусные сундуки и Rare Area
+
+Награда сундуков + IslandMultiplier учитывают прогрессию
+
+11. Visual Theme System
+
+Каждый остров меняет terrain material, skybox, цвет сундуков
+
+Поддержка Mobile Safe Zone для HUD и UI элементов
+
+Легкая ориентация на острове
+
+12. Production / Optimization
+
+1 island prefab → дублирование для новых островов
+
+Object Pool для сундуков, VFX и Floating Numbers с лимитом на количество
+
+StreamingEnabled, Draw Call минимизация, LOD для дальних объектов
+
+13. UX / Retention
+
+Цель видна игроку за 2 сек
+
+Яйца, сундуки, портал видны сразу
+
+Rare / Legendary сундуки визуально выделены
+
+AFK зона увеличивает удержание
+
+Friends income bonus отображается в UI
+
+Tutorial fallback path + сохранение прогресса в DataStore
+
+Bulk Open / Pity System уменьшает UX-трение **с атомарностью**
+
+14. Blueprint координаты (для Roblox)
+Объект	Координаты
+Spawn	0,0,0
+Egg Shop	-10,0,5
+Quest board	8,0,5
+Portal	0,0,-50
+Rare Area триггер	20,0,20 (пример)
+AFK зона	-15,0,10 (пример)
+
+**На каждом острове точка телепорта Spawn находится не ближе 100 студий от входа в Rare Area. Для Starter Island расстояние от Spawn (0,0,0) до Rare Area (20,0,20) составляет ~28 студий, что является безопасным минимумом. Для последующих островов при проектировании необходимо соблюдать это правило.*

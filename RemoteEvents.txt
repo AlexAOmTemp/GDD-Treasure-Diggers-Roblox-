@@ -1,0 +1,53 @@
+Имя события	Направление	Payload	Комментарий / Использование
+CoinsUpdate	Сервер → Клиент	{ newCoins: number }	Обновление общего количества монет игрока.
+AFKBonusUpdate	Сервер → Клиент	{ afkBonusPercent: number }	Отдельное событие для отображения бонуса AFK.
+FriendsBonusUpdate	Сервер → Клиент	{ friendsOnline: number, bonusPercent: number }	Периодическое обновление Friends Bonus (не чаще 1 раза в минуту, макс 100%).
+PetsInventoryUpdate	Сервер → Клиент	{ pets: [{ guid, nameId, rarityId, level, xp, golden }], equippedGUIDs: [string] }	Полная синхронизация питомцев (при входе, после Fusion/Hatch).
+PetStatUpdate	Сервер → Клиент	{ guid: string, xp: number, level: number, [golden?: boolean] }	Легкий апдейт для одного питомца при изменении XP/Level. Батчится.
+EggHatchedEvent	Сервер → Клиент	{ newPetGUIDs: [string], pityCounters: { [eggType: string]: number } }	Передаёт новые питомцы после вылупления; pityCounters для визуализации прогресса Legendary. Для Bulk Open передаются все GUID и финальные счётчики.
+FusionUpdate	Сервер → Клиент	{ oldPetsGUIDs: [string], newPetGUID: string }	Обновление после слияния питомцев.
+RebirthEvent	Клиент → Сервер	{}	Запрос на Rebirth. Сервер сам проверяет условия и ID игрока. RateLimit + кулдаун 10 сек.
+RebirthUpdate	Сервер → Клиент	{ rebirthCount: number, rebirthPoints: number, rebirthUpgrades: { bonusIncome: number, clickRateLimit: number, petSlots: number, afkIncome: number, chestSpawn: number, equipSlots: number } }	Обновление прогресса Rebirth и улучшений (полный набор).
+QuestProgressUpdate	Сервер → Клиент	{ questId: string, progress: number }	Обновление прогресса отдельного квеста.
+QuestCompleted	Сервер → Клиент	{ questId: string, rewards: { coins?: number, eggs?: number, rebirthPoints?: number } }	Информирование о завершении квеста и выдаче награды.
+QuestsUpdated	Сервер → Клиент	{ quests: [{ id, type, progress, completed, expiresAt }] }	Полная замена списка квестов (например, при смене дня, при новом событии).
+MegaChestSpawnedEvent	Сервер → Клиент	{ chestID: string, maxHP: number, spawnTime: number }	Создание Mega Chest; spawnTime для таймера.
+ChestHPUpdate	Сервер → Клиент	{ chestID: string, currentHP: number }	Обновление HP сундука. Отправляется не чаще 0.2 сек (батчинг).
+ChestRewardEvent	Сервер → Клиент	{ chestType: string, coinsEarned: number }	Для Floating Numbers и анимации награды. Легковесное.
+BoostsUpdatedEvent	Сервер → Клиент	{ activeBoosts: { [boostName: string]: number } }	Обновление активных усилителей (время окончания).
+RequestRareAreaAccess	Клиент → Сервер	{}	Запрос на покупку доступа в Rare Area. RateLimit + кулдаун 1 сек на вход/выход.
+RareAreaAccessUpdate	Сервер → Клиент	{ timestamp: number }	Обновление таймера доступа для HUD.
+TransactionFailed	Сервер → Клиент	{ message: string }	Универсальное событие для ошибок (DataStore, недостаточно монет, неверные условия, откат Bulk Open и т.д.).
+StartMining/StopMining	Клиент → Сервер	{}	Управление авто-кликером. RateLimit.
+
+✅ Примечания по использованию
+
+PetsInventoryUpdate / PetStatUpdate
+
+PetsInventoryUpdate – тяжёлое событие для полной синхронизации (вход, Fusion, Hatch).
+
+PetStatUpdate – лёгкое событие для обновления одного питомца (каждый тик XP или клики). Батчится.
+
+EggHatchedEvent
+
+Передаёт только новые питомцы; старые не нужны.
+
+pityCounters – таблица { eggType: counter }, чтобы клиент визуализировал прогресс Legendary. Для Bulk Open счетчики обновляются после каждой попытки внутри пакета, но результат возвращается только после успешного завершения всей операции.
+
+Coins / Bonuses
+
+AFK и Friends Bonus отдельно, чтобы избежать лишнего трафика и упрощения UI. Friends Bonus макс 100%.
+
+Chest Events
+
+ChestHPUpdate – оптимизировать через Attributes и GetAttributeChangedSignal + батчинг. **Урон обрабатывается атомарно.**
+
+ChestRewardEvent – лёгкое событие для Floating Numbers, не вызывает сетевой шторм.
+
+Rebirth / Quests / Rare Area
+
+Все события защищены от клиентских манипуляций: ID игрока и суммы не передаются от клиента.
+
+RareAreaAccessUpdate – сервер всегда вычисляет timestamp, при входе в зону проверка с кулдауном.
+
+**RateLimitService применяется ко всем входящим событиям.**

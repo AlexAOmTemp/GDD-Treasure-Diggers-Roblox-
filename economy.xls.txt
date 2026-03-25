@@ -1,0 +1,58 @@
+Economy Tables (Text Version)
+1. Coins / Income
+Source	Base Value	AFK Bonus %	Friends Bonus % per friend	Notes
+Click	1	50%	10%	Рассчитывается на сервере
+AFK	0.5	50%	0–50%	Только в AFK-зоне
+MegaChest Bonus	50	0%	0%	Начисляется только при разрушении
+Rebirth Bonus	См. RebirthCurve	—	—	Применяется к Base Income, с Soft Cap
+Equipped Pets Multiplier	varies	—	—	Каждого питомца с multiplier
+
+Friends Bonus максимальный: 100% (10% * макс 10 друзей)
+
+**Soft Cap для Rebirth рассчитывается по кривой RebirthCurve (economy.xlsx, лист RebirthCurve).**
+
+2. Eggs / Hatch
+Egg Type	Price (Coins)	Drop Rates (%)	Pity Counter Threshold	Notes
+Common Egg	100	Common: 80, Rare: 15, Epic: 5	20	XP питомца + Base Multiplier
+Rare Egg	500	Common: 50, Rare: 40, Epic: 10	15	Pity system сбрасывается после Legendary
+Epic Egg	2000	Rare: 60, Epic: 35, Legendary: 5	10	Golden шанс зависит от Fusion / VIP
+
+Pity шаг увеличения: +2% за каждую неудачу, максимум +20%
+
+3. Pets
+Rarity	Multiplier	Max Level	Fusion Threshold	Golden Multiplier	XP per Level
+Common	1x	10	5	1.5x	20
+Rare	1.5x	20	10	2x	50
+Epic	2x	30	15	2.5x	100
+Legendary	3x	40	20	3x	200
+
+4. Rebirth
+Rebirth Level	Cost (Coins)	Bonus Income %	ClickRateLimit	**Slot Expansion (petSlots)**	**Equip Slots**	Notes
+1	1,000	+10%	+0.1	+1	0	Начальные улучшения
+2	5,000	+20%	+0.2	+2	0	—
+3	15,000	+30%	+0.3	+3	0	—
+4	50,000	+40%	+0.4	+4	+1	—
+...	...	...	...	...	...	**Дальнейшие значения определяются кривой RebirthCurve**
+
+5. ClickRate / Auto Break Limits
+Action	Max CPS / Tick	Absolute Hard Cap	Notes
+Normal Click	12 CPS	20 CPS	Проверка сервером, hard cap неизменяем
+Auto Break	10 CPS	20 CPS	Учитывает Equipped Pets и бонусы
+Mega Chest DPS	15 CPS	20 CPS	Ограничение Damage Cap
+
+6. Rare Area Access
+Tier	Cost (Coins)	Duration (min)	Notes
+Basic Access	10,000	30	Проверка rareAreaAccessUntil
+VIP Access	50,000	120	Может влиять на AFK бонус
+
+7. Quest Rewards
+Quest Type	Reward Coins	Reward Eggs	Reward Rebirth Points	Notes
+Daily	500	0–1	0	ExpiresAt checked every 60 sec
+Event	1,000	1	1	Временные события
+Mission	2,000	2	2	Основные квесты
+
+8. Boosts
+Boost Name	Effect	Duration (min)	Notes
+Double Coins	+100% Base Income	30	Stackable with Rebirth Bonus
+XP Booster	+50% XP per action	30	Применяется к питомцам
+Auto Hatch Speed	-50% Hatch Time	15	—

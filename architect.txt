@@ -1,0 +1,248 @@
+1. Высокоуровневая структура папок
+
+Game
+├─ ServerScripts
+│ ├─ ChestManager
+│ │ - Проверка ChestID, DistanceCheck, AbsoluteClickRateLimit (hard cap)
+│ │ - Atomic Claim: серверный флаг isClaimed
+│ │ - Учёт пинга: проверка позиции за последние 0.5 сек или допуск distance + speed*ping
+│ │ - Стейт-машина сундука: Hidden (в пуле) → Spawning (анимация) → Active (доступен) → Destroyed (награда выдана) → Hidden
+│ │ - Триггер внутренних событий (CoinsManager, QuestManager)
+│ │ - ChestRewardEvent(payload: {chestType, coinsEarned}) для всех сундуков
+│ ├─ MegaChestManager
+│ │ - Таймер спавна, уникальные ChestID
+│ │ - Ограничение Damage Cap на игрока
+│ │ - Атомарное обновление HP (очередь или блокировка на сундук)
+│ │ - Урон от всех игроков накапливается за интервал (0.2 сек) и применяется с учётом Damage Cap: общий урон за интервал не может превышать 50% максимального HP сундука. Урон каждого игрока обрабатывается пропорционально его вкладу.
+│ │   Пример: Игроки A, B, C наносят 30, 50 и 40 урона за интервал. Максимальный разрешённый урон = 50% HP = 100 ед. Суммарный урон 120 превышает лимит, поэтому применяется коэффициент 100/120 ≈ 0.833. Каждый игрок получает урон пропорционально: A: 30*0.833=25, B: 41.7, C: 33.3.
+│ │ - ChestHPUpdate отправляется не чаще 0.2 сек (батчинг)
+│ ├─ CoinsManager
+│ │ - Начисление дохода игроку (Income_per_tick + бонусы)
+│ │ - AFK-статус определяется по отсутствию действий (клики, перемещения) в течение 10 секунд и нахождению в AFK-зоне. Если игрок находится в зоне, но активен, он получает обычный доход, а не AFK-бонус.
+│ │ - Проверка позиции выполняется каждые 5 секунд. При выходе из AFK-зоны бонус отключается немедленно (следующий тик дохода не применяет AFK-множитель).
+│ │ - Friends Bonus: не чаще 1 раза в минуту, максимальный бонус 100%
+│ │ - Применение Soft Cap к сумме множителей дохода
+│ ├─ PetsManager
+│ │ - Добавление/удаление питомцев
+│ │ - Fusion и Golden Pet, проверка Equipped Limit
+│ │ - При Fusion новый питомец наследует максимальный уровень и максимальную XP (внутри этого уровня) из исходных питомцев. Golden-статус присваивается автоматически при достижении порога Fusion.
+│ │ - Расчёт опыта питомцев (XP) и Level Up
+│ │ - Проверка autoDelete перед проверкой лимита инвентаря
+│ │ - При добавлении питомца проверять настройки autoDelete и применять их
+│ │ - Приоритет удаления: Common → Rare → низкий уровень → старый. Если после удаления всех возможных питомцев места всё ещё недостаточно, операция отклоняется с ошибкой "Inventory full", клиент получает TransactionFailed.
+│ │ - Приоритет удаления используется как для автоудаления, так и для выбора питомцев на удаление при переполнении инвентаря в результате хэтча или фьюжна.
+│ ├─ RebirthManager
+│ │ - Расчёт стоимости Rebirth
+│ │ - Начисление Rebirth Points
+│ │ - Проверка лимитов equippedPets
+│ │ - Кулдаун на Rebirth (не чаще 1 раза в 10 сек, хранится в памяти, не сохраняется в профиль)
+│ │ - Rebirth бонус имеет Soft Cap после определённого количества Rebirth
+│ ├─ QuestManager
+│ │ - Выдача квестов (Daily, Event, Mission) привязана к ServerTime
+│ │ - Проверка expiresAt каждые 60 сек
+│ │ - Обновление HUD через QuestProgressUpdate
+│ │ - При изменении списка квестов используется QuestsUpdated
+│ └─ RareAreaManager
+│   - Проверка rareAreaAccessUntil при входе в зону (по триггеру или Region3)
+│   - Покупка доступа (списание монет, установка timestamp)
+│   - Серверный кулдаун на вход/выход (не чаще 1 раза в сек, не сохраняется)
+│   - Серверная проверка позиции игрока (Region3 / ZonePlus)
+│   - Телепорт игрока при истечении доступа только если игрок внутри зоны
+│   - Точка телепорта Spawn достаточно далеко от входа
+│   - Очистка доступа по истечении
+
+ModuleScripts
+├─ ChestConfig
+├─ PetConfig
+├─ EggConfig
+├─ RebirthConfig
+├─ QuestConfig
+├─ SharedUtilities
+└─ GlobalConstants (все жёсткие ограничения: AbsoluteMaxCPS, MaxFloatingNumbers, AFKCheckInterval и т.д.)
+
+Server-side Signal/Observer
+
+Object Pooling (OnRelease сбрасывает все атрибуты объекта)
+
+ServerTime
+
+DataMigrationService (функции миграции DataVersion)
+ - При миграции создаётся резервная копия данных; при ошибке данные восстанавливаются
+
+RateLimitService (контроль частоты RemoteEvents от клиента, применяется ко всем входящим событиям)
+
+LocalScripts
+├─ HUDManager
+│ - Подписка на RemoteEvents: ... (полный список RemoteEvents)
+│ - Локальная блокировка кнопок на время обработки запроса
+├─ TutorialManager
+├─ FeedbackManager
+├─ EggHatchUI
+└─ InputManager
+
+Отправка действий (ChestID / EggID / Rebirth trigger)
+
+Поддержка Bulk Open (3/8 яиц) с атомарной обработкой
+
+RequestRareAreaAccess
+
+ClientRateLimit (на клиенте не отправлять чаще 1 раза в 0.5 сек)
+
+ReplicatedStorage
+├─ RemoteEvents
+│ - CoinsUpdate { newCoins }
+│ - AFKBonusUpdate { afkBonusPercent }
+│ - FriendsBonusUpdate { friendsOnline, bonusPercent }
+│ - PetsInventoryUpdate { pets, equippedGUIDs }
+│ - PetStatUpdate { guid, xp, level, golden? }
+│ - EggHatchedEvent { newPetGUIDs, pityCounters }
+│ - FusionUpdate { oldPetsGUIDs, newPetGUID }
+│ - RebirthEvent {}
+│ - RebirthUpdate { rebirthCount, rebirthPoints, rebirthUpgrades }
+│ - QuestProgressUpdate { questId, progress }
+│ - QuestCompleted { questId, rewards }
+│ - QuestsUpdated { quests }
+│ - MegaChestSpawnedEvent { chestID, maxHP, spawnTime }
+│ - ChestHPUpdate { chestID, currentHP }
+│ - ChestRewardEvent { chestType, coinsEarned }
+│ - BoostsUpdatedEvent { activeBoosts }
+│ - RequestRareAreaAccess {}
+│ - RareAreaAccessUpdate { timestamp }
+│ - TransactionFailed { message }
+│ - StartMining / StopMining
+
+DataStoreService
+└─ PlayerDataStore
+   (поля согласно player_data_schema.txt)
+
+Workspace
+├─ Islands
+├─ SpawnPoints
+└─ Chests / MegaChests (уникальные ChestID, Object Pooling, Attributes HP)
+
+2. Network & Server Architecture
+
+Player → LocalScripts → RemoteEvent → ServerScripts
+
+Payload не содержит playerID или монеты
+
+Сервер сам проверяет coins, доступы и лимиты
+
+Atomic Claim + ClickRateLimit + DistanceCheck с учётом пинга (буфер)
+
+RateLimit на каждое действие: не более N раз в минуту (настраивается в Config) и применяется ко всем событиям
+
+equippedPets проверяется при Fusion/Rebirth
+
+HP сундуков через Attributes и GetAttributeChangedSignal с батчингом
+
+StreamingEnabled: события только игрокам рядом. Глобально рассылаются: MegaChestSpawnedEvent, CoinsUpdate (только для конкретного игрока), TransactionFailed. Локально (только игрокам рядом): ChestHPUpdate, ChestRewardEvent, FloatingNumbers.
+
+3. Data Management / ProfileService
+
+DataVersion + DataMigrationService с резервным копированием
+
+isProcessing с защитой через pcall/task.delay и таймаутом 10 секунд
+
+При загрузке профиля (PlayerAdded) флаги isProcessing и isMigrating сбрасываются в false
+
+quests как массив объектов (Daily, Event, Mission)
+
+recentHatches лимит 5
+
+ownedGamePasses с синхронизацией через UserOwnsGamePassAsync
+
+pityCounters с очисткой старых ключей
+
+rareAreaAccessUntil для RareAreaManager
+
+атомарные операции: Bulk Open, Fusion, Rebirth с полным откатом при ошибке
+
+XP питомцев и уровни вычисляются сервером
+
+activeBoosts проверяются при загрузке и периодически на истечение
+
+4. Security / Anti-Cheat
+
+Проверка позиции игрока при AFK Income и Rare Area (при каждом входе в зону)
+
+Все расчёты дохода только на сервере
+
+Atomic Claim + DistanceCheck + ClickRateLimit с абсолютным hard cap (20 CPS)
+
+equippedPets проверяются при изменении лимитов
+
+RareAreaManager телепортирует только игроков внутри зоны и имеет кулдаун
+
+Защита от повторной отправки одного ChestID: проверять, не обработан ли уже
+
+RateLimitService для всех RemoteEvents от клиента
+
+Защита от повторной отправки Rebirth и RareAreaAccess (кулдаун в памяти)
+
+Кулдауны на действия (Rebirth, вход в Rare Area) хранятся в памяти сервера и не сохраняются в профиль. Это допустимо, так как смена сервера — редкое событие, а кулдауны небольшие (Rebirth 10 сек, RareArea 1 сек).
+
+5. Chest & Object Pool
+
+Object Pooling для Chests, MegaChests, Floating Numbers, VFX
+
+Для Floating Numbers ограничение на количество одновременно отображаемых (не более 10)
+
+OnRelease сбрасывает все атрибуты объекта (HP, бонусы)
+
+MegaChest через RemoteEvent с атомарным обновлением HP
+
+ChestRewardEvent для всех сундуков
+
+6. Auto Break / Game Pass
+
+StartMining / StopMining через RemoteEvents
+
+DPS ограничен сервером с абсолютным hard cap
+
+Auto Break учитывает бонусы, Equipped Pets и ближайший сундук
+
+7. QuestManager
+
+Массив квестов: {type, id, progress, completed, expiresAt}
+
+Генерация квестов синхронизирована через ServerTime
+
+Проверка expiresAt каждые 60 сек
+
+Обновление HUD через QuestProgressUpdate
+
+При изменении списка (новый день, событие) вызывается QuestsUpdated
+
+8. RareAreaManager
+
+Проверка rareAreaAccessUntil при входе в зону (через триггер) с кулдауном
+
+Покупка доступа (списание монет + установка timestamp)
+
+Физическая блокировка: телепорт только внутри зоны, Spawn далеко от входа
+
+Очистка доступа по истечении
+
+Обновление HUD через RareAreaAccessUpdate
+
+9. Critical Nuances
+
+isProcessing: использовать pcall/task.delay для сброса при ошибке с таймером
+
+При входе игрока isProcessing и isMigrating сбрасываются
+
+Teleport Loop: точка телепорта Spawn далеко от Rare Area
+
+Attributes Object Pool: сброс HP/статусов при выдаче
+
+ChestRewardEvent: для всех сундуков, не только MegaChest
+
+BoostsUpdatedEvent: унифицировано с HUDManager
+
+PetsUpdate / EggHatchedEvent: обновление UI после вылупления
+
+AFK Income / Friends Bonus: периодическая проверка позиции и друзей, макс 100%
+
+Обработка выхода игрока во время атомарной операции:
+Если игрок покидает игру во время выполнения атомарной операции (isProcessing = true), флаг снимается сервером после таймаута 10 сек. При следующем входе профиль загружается в последнем сохранённом состоянии (до начала операции), так как изменения не были зафиксированы. Это безопасно, но может привести к потере монет, если операция уже частично выполнена (но мы гарантируем атомарность). Рекомендуется логировать такие случаи для последующего анализа.

@@ -1,0 +1,183 @@
+GDD – Treasure Diggers
+1. Game Overview
+
+Название: Treasure Diggers
+
+Жанр: Simulator / Collection
+
+Платформа: Roblox
+
+Engine: Roblox Studio
+
+Цель игрока:
+
+Ломать сундуки и получать монеты
+
+Покупать и открывать яйца (включая Bulk Open)
+
+Получать питомцев, прокачивать их через Level / Fusion / Golden Pet
+
+Использовать Rebirth / Rebirth Points для перманентных бонусов
+
+Разблокировать новые острова через Portal Unlock
+
+Core Loop:
+Break chests → Earn coins → Buy eggs → Bulk Open → Hatch pets → Equip/Fuse → Farm more → Unlock portal → Optional Rebirth / Rebirth Shop → Loop
+
+Ссылки на документы:
+
+Архитектура и безопасность: architect.txt
+
+Экономика и прогрессия: economy.txt
+
+UX/UI и VFX/SFX: ux ui.txt
+
+Level Design / Blueprint островов: level blueprint.txt
+
+2. Player Progression
+
+Coins:
+
+Начисляются сервером
+
+AFK Income: начисляется только при отсутствии действий **в специальной AFK-зоне**, макс бонус 100%
+
+Friends Bonus: начисляется за активных друзей, макс 100%
+
+Fusion / Golden Pet:
+
+Исходные питомцы исчезают после слияния
+
+Новый питомец наследует уровень и бонусный множитель
+
+Inventory / Pet Slots:
+
+Ограничение на количество питомцев, базовое + Game Pass + Rebirth Shop
+
+Multi-select, сортировка, Auto-delete для управления пространством
+
+XP / Pet Leveling:
+
+Питомцы получают опыт за клики и AFK Income
+
+Level Up повышает бонус к доходу
+
+Подробная кривая XP хранится в economy.txt
+
+Rebirth / Rebirth Points:
+
+Игроки могут тратить очки на перманентные бонусы в Rebirth Shop
+
+Бонусы: AFK Income, Pet Slot, Chest Spawn Rate, ClickRateLimit, **Equip Slot**, другие
+
+Бонус Rebirth имеет Soft Cap
+
+Точные числовые параметры определены в economy.txt
+
+Mega Chest:
+
+Спавнится по таймеру или событию
+
+Damage Cap и Object Pool обеспечивают стабильность
+
+HP обновляется с батчингом **и атомарно при уроне от нескольких игроков**
+
+Награды и визуальная обратная связь описаны в level blueprint.txt
+
+3. First Time User Experience (FTUE)
+
+Player Spawn: Hub (см. Level Blueprint)
+
+Tutorial arrows: направляют игрока к сундукам, Egg Shop, Portal
+
+Bulk Open + Pity System: увеличивает шанс на редких питомцев при невезении
+
+Feedback: Floating numbers, crit flash, Egg hatch flash, SFX
+
+HUD отображает текущие coins, слоты питомцев, активные boosts, quest tracker
+
+4. Inventory Management
+
+Multi-select, сортировка питомцев
+
+Auto-delete Common/Rare после Fusion или через кнопку «Clean Up» с проверкой настроек **и приоритетом удаления**
+
+Bulk Open уменьшает UX-трение **и атомарен**
+
+Equipped Limit учитывает базовые слоты, Game Pass и Rebirth Shop upgrades (equipSlots)
+
+5. Social Mechanics
+
+Friends Income Bonus: учитывается на сервере, макс 100%
+
+Leaderboards: по монетам, Rebirth Count и XP питомцев
+
+Поддержка нескольких языков: EN, PT-BR, PH, RU
+
+6. Technical Notes
+
+Все расчёты дохода и бонусов происходят на сервере
+
+Проверка уникальности ChestID / EggID / MegaChestID
+
+DistanceCheck и ClickRateLimit с адаптацией для Auto Break **и учётом пинга**
+
+RateLimit на RemoteEvents от клиента **для всех событий**
+
+DataStore: session lock + retry при API failure, поддержка Bulk Open **с атомарностью**
+
+RemoteEvents: клиент отправляет только ID действия, сервер формирует вычисления
+
+Server-side Signal/Observer для всех менеджеров (ChestManager, QuestManager, CoinsManager, PetsManager, RebirthManager)
+
+Object Pool для VFX и Floating Numbers с лимитом на количество
+
+StreamingEnabled для островов, минимизация Draw Calls и LOD для дальних объектов
+
+Anti-cheat проверки: скорость перемещения, проверка дистанции до сундука, проверка при входе в Rare Area **с кулдауном**
+
+7. Level Design References
+
+Starter Island: см. level blueprint.txt
+
+Второй остров: см. level blueprint.txt
+
+Sightlines: визуальные и физические разделители зон
+
+Chest spawn, Mega Chest, Portal Unlock – параметры перенесены в level blueprint.txt
+
+Bulk Open / Pity System – визуальные элементы и обработка
+
+8. UX / UI References
+
+HUD: coins, boosts, pet slots, quest tracker
+
+Egg Hatch / Bulk Open screen: flash + rarity color + SFX + Pity System **с индикацией ошибки транзакции**
+
+Pet Inventory: multi-select, sort, auto-delete, XP отображение
+
+Rebirth / Rebirth Shop: spend Rebirth Points на перманентные бонусы, confirm overlay + SFX
+
+Game Pass / Boosts: визуальные индикаторы + SFX
+
+Tutorial overlays: arrows, fallback path, minimalistic
+
+Feedback Loop для Rebirth: эффект празднования, VFX
+
+9. MVP Scope
+
+2 острова с зонированием
+
+3 типа сундуков (Common, Rare, Epic)
+
+3 типа яиц с Bulk Open
+
+6 питомцев (Fusion + Golden Pet)
+
+Mega Chest с Damage Cap и таймером
+
+Rebirth механика + Rebirth Shop
+
+HUD, Inventory, Egg Hatch / Bulk Open, Tutorial, Feedback UI
+
+AFK / Friends bonus / Leaderboards / Multi-language
