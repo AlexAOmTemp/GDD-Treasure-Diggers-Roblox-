@@ -1,1 +1,2 @@
-# GDD-Treasure-Diggers-Roblox-
+# GDD-Treasure-Diggers (Roblox)
+Пакет документов для разработки роблокс проекта. gdd и economy носят общий характер, остальные скорее технический.
