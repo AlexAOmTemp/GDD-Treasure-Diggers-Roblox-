@@ -1,2 +1,2 @@
 # GDD-Treasure-Diggers (Roblox)
-A package of documents for Roblox project development. The GDD and economy design are general in nature, while the rest are more technical.
+Roblox project development documentation package. The GDD and game economy are high-level, while the others are more technical
